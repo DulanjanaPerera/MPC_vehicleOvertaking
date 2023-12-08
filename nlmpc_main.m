@@ -10,7 +10,7 @@ nlobj = nlmpc(nx, ny, nu);
 % Obstacle initial states
 obsState = [10, -2.5, 0, 0;
     30, -2.5, 0, 0;
-    30, 2.5, 0, 0];
+    30, 2.5, pi, 0];
 
 % Obstacle X and Y
 obs = [obsState(1,1:2);
@@ -58,7 +58,7 @@ u0 = [0; 0];
 validateFcns(nlobj,x0,u0,[],{Ts, obs});
 
 %%
-x = [0; -2.5; 0; 5];
+x = [0; -2.5; 0; 0];
 y = x;
 
 mv = [0; 0];
@@ -75,7 +75,7 @@ xHistory = x;
 uHistory = mv;
 
 % obstacle state history
-obsV = 0;
+obsV = 10;
 for ob=1:length(obs)
 obsHistory(ob,1:nx,1) = [obs(ob,1); obs(ob,2); obsState(ob,3); obsV];
 end
@@ -87,16 +87,6 @@ elpt = 0;
 for ct = 1:(Duration/Ts)
 
     tic;
-    % if ct<time_obs
-    %     obs = [10, -2.5;
-    % 20, -2.5];
-    %     nloptions.Parameters = {Ts, obs};
-    % else
-    %     obs = [10, -2.5;
-    % 20, -2.5;
-    % 20, 2.5];
-    %     nloptions.Parameters = {Ts, obs};
-    % end
 
     % Compute optimal control moves.
     [mv,nloptions,info] = nlmpcmove(nlobj,x,mv,yref,[],nloptions);
@@ -105,7 +95,7 @@ for ct = 1:(Duration/Ts)
     x = discreteStateEq(x,mv,Ts);
     
     for ob=1:length(obs)
-        obsHistory(ob,1:4,ct+1) = discreteStateEq(obsHistory(ob,1:4,ct),[0; 0], Ts, obs);
+        obsHistory(ob,1:4,ct+1) = discreteStateEq(obsHistory(ob,1:4,ct),[obsV/25 + 1; 0], Ts, obs);
         obs(ob,1:2) = obsHistory(ob,1:2,ct+1);
     end
     nloptions.Parameters = {Ts, obs};
