@@ -7,7 +7,7 @@ ny = 4;
 nu = 2;
 nlobj = nlmpc(nx, ny, nu);
 
-% Obstacle initial states
+% Obstacle initial states [x, y, orientation, velocity]
 obsState = [10, -2.5, 0, 0;
     30, -2.5, 0, 0;
     30, 2.5, pi, 0];
@@ -17,6 +17,7 @@ obs = [obsState(1,1:2);
     obsState(2,1:2);
     obsState(3,1:2)];
 
+% sample time
 Ts = 0.1;
 nlobj.Ts = Ts;
 nlobj.PredictionHorizon = 10;
@@ -36,9 +37,10 @@ nlobj.Jacobian.OutputFcn = 'outputJacobian';
 nlobj.Weights.OutputVariables = [3 3 1 1];
 nlobj.Weights.ManipulatedVariablesRate = [1 0.1];
 
+% Defined the the custom contraints
 nlobj.Optimization.CustomIneqConFcn = 'ObstacleConstraint';
 
-%% Settign up the limits 
+%% Setting up the limits for input and outputs
 % Road limits
 nlobj.States(2).Min = -2.5;
 nlobj.States(2).Max = 2.5;
@@ -57,12 +59,17 @@ x0 = [0; -2.5; 0; 0];
 u0 = [0; 0];
 validateFcns(nlobj,x0,u0,[],{Ts, obs});
 
-%%
+%% Initializing the model
+% set the initial states
 x = [0; -2.5; 0; 0];
+
+% set the output state
 y = x;
 
+%
 mv = [0; 0];
 
+% goal location
 yref = [60 -2.5 0 0];
 
 nloptions = nlmpcmoveopt;
@@ -75,11 +82,13 @@ xHistory = x;
 uHistory = mv;
 
 % obstacle state history
+% Obstacle velocity
 obsV = 10;
 for ob=1:length(obs)
-obsHistory(ob,1:nx,1) = [obs(ob,1); obs(ob,2); obsState(ob,3); obsV];
+    obsHistory(ob,1:nx,1) = [obs(ob,1); obs(ob,2); obsState(ob,3); obsV];
 end
 
+% unseen obstacle - time that the obstacle should apprear
 time_obs = 15;
 
 
@@ -107,6 +116,7 @@ for ct = 1:(Duration/Ts)
     velocity_noise = randn(1,1)*1;
     y = x + [pos_noise;angle_noise;velocity_noise]; 
     elpt = elpt + toc;
+    
     % Save plant states for display.
     xHistory = [xHistory x];
     uHistory = [uHistory mv];
